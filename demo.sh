@@ -15,8 +15,8 @@ clear
 
 echo "Set up Storage Account for hosting Issuer URL"
 pei "az group create --name kubecon-na-2023 --location southcentralus --output none --only-show-errors"
-pei "az storage account create --resource-group kubecon-na-2023 --name oidcissuer006 --output none --only-show-errors"
-pei "az storage container create --account-name oidcissuer006 --name demo --public-access container --output none --only-show-errors"
+pei "az storage account create --resource-group kubecon-na-2023 --name oidcissuer008 --output none --only-show-errors"
+pei "az storage container create --account-name oidcissuer008 --name demo --public-access container --output none --only-show-errors"
 wait
 
 clear
@@ -25,8 +25,8 @@ echo "Upload discovery document to Storage Account"
 
 cat <<EOF > openid-configuration.json
 {
-  "issuer": "https://oidcissuer006.blob.core.windows.net/demo/",
-  "jwks_uri": "https://oidcissuer006.blob.core.windows.net/demo/openid/v1/jwks",
+  "issuer": "https://oidcissuer008.blob.core.windows.net/demo/",
+  "jwks_uri": "https://oidcissuer008.blob.core.windows.net/demo/openid/v1/jwks",
   "response_types_supported": [
     "id_token"
   ],
@@ -41,14 +41,14 @@ EOF
 
 bat openid-configuration.json
 
-pe "az storage blob upload --account-name oidcissuer006 --container-name demo --file openid-configuration.json --name .well-known/openid-configuration --output none --only-show-errors"
+pe "az storage blob upload --account-name oidcissuer008 --container-name demo --file openid-configuration.json --name .well-known/openid-configuration --output none --only-show-errors"
 wait
 
 clear
 
 echo "Verify discovery document is publicly accessible"
 wait
-pe "curl -s https://oidcissuer006.blob.core.windows.net/demo/.well-known/openid-configuration | jq"
+pe "curl -s https://oidcissuer008.blob.core.windows.net/demo/.well-known/openid-configuration | jq"
 wait
 
 clear
@@ -60,14 +60,14 @@ echo "Generate the JWKS document using azwi tool"
 pe "azwi jwks --public-keys sa.pub --output-file jwks.json"
 bat jwks.json
 wait
-pei "az storage blob upload --account-name oidcissuer006 --container-name demo --file jwks.json --name openid/v1/jwks --output none --only-show-errors"
+pei "az storage blob upload --account-name oidcissuer008 --container-name demo --file jwks.json --name openid/v1/jwks --output none --only-show-errors"
 wait
 
 clear
 
 echo "Verify JWKS document is publicly accessible"
 wait
-pe "curl -s https://oidcissuer006.blob.core.windows.net/demo/openid/v1/jwks | jq"
+pe "curl -s https://oidcissuer008.blob.core.windows.net/demo/openid/v1/jwks | jq"
 wait
 
 clear
@@ -95,7 +95,7 @@ nodes:
     kind: ClusterConfiguration
     apiServer:
       extraArgs:
-        service-account-issuer: https://oidcissuer006.blob.core.windows.net/demo/
+        service-account-issuer: https://oidcissuer008.blob.core.windows.net/demo/
         service-account-key-file: /etc/kubernetes/pki/sa.pub
         service-account-signing-key-file: /etc/kubernetes/pki/sa.key
     controllerManager:
@@ -119,7 +119,7 @@ wait
 clear
 
 echo "Configure trust for workload identity federation"
-pe "az identity federated-credential create --name kubernetes-federated-identity --identity-name kubecon-na-2023 --resource-group kubecon-na-2023 --issuer 'https://oidcissuer006.blob.core.windows.net/demo/' --subject 'system:serviceaccount:kubecon-demo:workload-identity'"
+pe "az identity federated-credential create --name kubernetes-federated-identity --identity-name kubecon-na-2023 --resource-group kubecon-na-2023 --issuer 'https://oidcissuer008.blob.core.windows.net/demo/' --subject 'system:serviceaccount:kubecon-demo:workload-identity'"
 wait
 clear
 
